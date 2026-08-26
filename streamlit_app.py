@@ -61,7 +61,6 @@ def live_seats(hand: dict) -> list[int]:
 
 
 def actionable_seats(hand: dict) -> list[int]:
-    """Players still in the hand who have chips left to make a decision."""
     return [seat for seat in live_seats(hand) if st.session_state.stacks[seat] > 0]
 
 
@@ -154,7 +153,6 @@ def next_pending(after_seat: int, hand: dict) -> int:
 
 
 def five_card_rank(cards: list[tuple[str, str]]) -> tuple:
-    """Return a comparable ranking for a five-card Texas Hold'em hand."""
     values = sorted((RANK_VALUE[rank] for rank, _ in cards), reverse=True)
     counts = sorted(((values.count(value), value) for value in set(values)), reverse=True)
     flush = len({suit for _, suit in cards}) == 1
@@ -242,7 +240,6 @@ def showdown_winners(hand: dict) -> list[int]:
 
 
 def pot_layers(hand: dict) -> list[tuple[int, list[int]]]:
-    """Build the main pot and side pots from each player's total contribution."""
     levels = sorted({amount for amount in hand["contributions"] if amount > 0})
     previous = 0
     layers = []
@@ -255,7 +252,6 @@ def pot_layers(hand: dict) -> list[tuple[int, list[int]]]:
 
 
 def distribute_pots(hand: dict, forced_winner: int | None = None) -> list[dict]:
-    """Pay every main/side pot only to players eligible for that pot."""
     payouts = []
     for index, (amount, eligible) in enumerate(pot_layers(hand)):
         if forced_winner is not None:
@@ -316,7 +312,6 @@ def close_round(hand: dict) -> None:
 
 
 def run_out_board(hand: dict) -> None:
-    """Reveal remaining community cards when all but one player are all-in."""
     board_cards = {"Pre-flop": 3, "Flop": 1, "Turn": 1}
     next_phase = {"Pre-flop": "Flop", "Flop": "Turn", "Turn": "River"}
     while hand["phase"] in board_cards:
@@ -360,7 +355,6 @@ def apply_action(hand: dict, seat: int, action: str) -> None:
 
 
 def ai_action(hand: dict, seat: int) -> str:
-    """AI choices use each private card and public betting information."""
     actions = legal_actions(hand, seat)
     cards = hand["cards"][seat]
     values = sorted((RANK_VALUE[rank] for rank, _ in cards), reverse=True)

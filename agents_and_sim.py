@@ -5,14 +5,10 @@ from leduc_env import (
     utility_p0, remaining_deck, full_deck, RANKS
 )
 
-NODES_EXPANDED = 0  # global counter for performance measurement
+NODES_EXPANDED = 0
 
 
 def evaluate_heuristic(state):
-    """Depth-cutoff heuristic (unused at full depth, kept for scalability demo).
-    Rough equity: probability AI's hole card beats a uniformly random opponent
-    card, scaled by pot size. Not needed for Leduc (tree is fully searchable)
-    but included so the design generalizes to bigger games."""
     deck = remaining_deck(state, exclude_player_view=0)
     wins = ties = 0
     for oc in deck:
@@ -26,9 +22,6 @@ def evaluate_heuristic(state):
 
 
 def expectiminimax(state, depth, alpha=-1e9, beta=1e9):
-    """Exact (or depth-limited) expectiminimax over a FULLY SPECIFIED state
-    (both hole cards known to the search). Player 0 = MAX, player 1 = MIN.
-    Chance node = dealing the flop board card."""
     global NODES_EXPANDED
     NODES_EXPANDED += 1
 
@@ -50,7 +43,7 @@ def expectiminimax(state, depth, alpha=-1e9, beta=1e9):
         return val
 
     acts = legal_actions(state)
-    if state.current == 0:  # MAX
+    if state.current == 0:
         best = -1e9
         for a in acts:
             v = expectiminimax(apply_action(state, a), depth - 1, alpha, beta)
@@ -59,7 +52,7 @@ def expectiminimax(state, depth, alpha=-1e9, beta=1e9):
             if alpha >= beta:
                 break
         return best
-    else:  # MIN
+    else:
         best = 1e9
         for a in acts:
             v = expectiminimax(apply_action(state, a), depth - 1, alpha, beta)
@@ -71,12 +64,6 @@ def expectiminimax(state, depth, alpha=-1e9, beta=1e9):
 
 
 class ExpectiminimaxAgent:
-    """Plays as either seat. Does NOT peek at the opponent's true hole card:
-    it marginalizes over all cards consistent with what has been revealed
-    (its own card + any board card), i.e. a chance node over 'nature's deal'
-    of the opponent's hand. This is the standard AIMA-style relaxation for
-    applying expectiminimax to a hidden-information game: opponent modeled
-    as a fully-informed adversarial minimizer, weighted by deal probability."""
 
     def __init__(self, seat, max_depth=20):
         self.seat = seat
@@ -99,7 +86,6 @@ class ExpectiminimaxAgent:
                 child = apply_action(hypo, a)
                 v = expectiminimax(child, self.max_depth)
                 exp_val += prob * v
-            # value is from player 0's perspective; flip sign if we're seat 1
             score = exp_val if me == 0 else -exp_val
             if best_val is None or score > best_val:
                 best_val, best_action = score, a
@@ -115,7 +101,6 @@ class RandomAgent:
 
 
 class CallStationAgent:
-    """Always checks/calls, never folds or raises."""
     def __init__(self, seat):
         self.seat = seat
 
@@ -127,8 +112,6 @@ class CallStationAgent:
 
 
 class TightAggressiveAgent:
-    """Simple rule-based baseline: raises with K, calls with Q, folds J
-    (unless checking is free)."""
     def __init__(self, seat):
         self.seat = seat
 
@@ -162,7 +145,7 @@ def play_hand(agent0, agent1, rng):
         agent = agent0 if state.current == 0 else agent1
         action = agent.act(state)
         state = apply_action(state, action)
-    return utility_p0(state)  # net result for seat 0
+    return utility_p0(state)
 
 
 def simulate(agent0_cls, agent1_cls, n_hands=200, seed=42, **kwargs):
@@ -173,7 +156,6 @@ def simulate(agent0_cls, agent1_cls, n_hands=200, seed=42, **kwargs):
     global NODES_EXPANDED
     NODES_EXPANDED = 0
     for i in range(n_hands):
-        # alternate seats each hand to cancel positional advantage
         if i % 2 == 0:
             a0 = agent0_cls(0, **kwargs) if agent0_cls is ExpectiminimaxAgent else agent0_cls(0)
             a1 = agent1_cls(1, **kwargs) if agent1_cls is ExpectiminimaxAgent else agent1_cls(1)
@@ -181,7 +163,7 @@ def simulate(agent0_cls, agent1_cls, n_hands=200, seed=42, **kwargs):
         else:
             a0 = agent1_cls(0, **kwargs) if agent1_cls is ExpectiminimaxAgent else agent1_cls(0)
             a1 = agent0_cls(1, **kwargs) if agent0_cls is ExpectiminimaxAgent else agent0_cls(1)
-            net = -play_hand(a0, a1, rng)  # flip back to "agent0's" perspective
+            net = -play_hand(a0, a1, rng)
         total0 += net
         results.append(net)
     elapsed = time.perf_counter() - t0

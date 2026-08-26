@@ -15,7 +15,6 @@ def prompt_human_action(state, seat):
         choice = input("Your action: ").strip().lower()
         if choice in acts:
             return choice
-        # allow shorthand
         shorthand = {'f': 'fold', 'c': 'call' if 'call' in acts else 'check',
                      'k': 'check', 'r': 'raise'}
         if choice in shorthand and shorthand[choice] in acts:
@@ -39,7 +38,6 @@ def play_interactive():
         deck = full_deck()
         rng.shuffle(deck)
         hole = {0: deck[0], 1: deck[1]} if human_seat == 0 else {0: deck[1], 1: deck[0]}
-        # simpler: just assign directly
         h0, h1 = deck[0], deck[1]
         state = new_hand(h0, h1)
 
@@ -49,7 +47,6 @@ def play_interactive():
         while not state.terminal:
             if needs_board_card(state):
                 remaining = [c for c in full_deck()]
-                # remove known cards
                 for c in (state.hole[0], state.hole[1]):
                     remaining.remove(c)
                 card = rng.choice(remaining)
